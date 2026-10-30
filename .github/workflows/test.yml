@@ -1,14 +1,17 @@
-name: Discord Test
+name: Hourly Scanner
 
 on:
+
   workflow_dispatch:
 
 jobs:
-  test:
+
+  scan:
 
     runs-on: ubuntu-latest
 
     steps:
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -17,7 +20,4 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Send Discord Test
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python test_discord.py
+      - run: python scanner.py
