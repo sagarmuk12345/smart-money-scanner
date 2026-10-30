@@ -36,10 +36,11 @@ for symbol in watchlist:
 
         if rvol > 2:
 
-            alerts.append(
-                f"🚀 {symbol}\nRVOL = {rvol:.2f}"
-            )
+          price = hist["Close"].iloc[-1]
 
+alerts.append(
+    f"🚀 {symbol}\nPrice = ${price:.2f}\nRVOL = {rvol:.2f}"
+)
     except Exception as e:
 
         print(symbol, e)
