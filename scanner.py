@@ -34,7 +34,7 @@ for symbol in watchlist:
 
         rvol = latest_volume / avg_volume
 
-        if rvol > 1.5:
+        if rvol > 2:
 
             alerts.append(
                 f"🚀 {symbol}\nRVOL = {rvol:.2f}"
