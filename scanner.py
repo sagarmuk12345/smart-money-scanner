@@ -42,16 +42,16 @@ try:
 
             close_prices = hist["Close"].dropna()
 
-if len(close_prices) < 20:
-    continue
+            if len(close_prices) < 20:
+                continue
 
-price = close_prices.iloc[-1]
+            price = close_prices.iloc[-1]
 
-            ema20 = hist["Close"].ewm(span=20).mean().iloc[-1]
-            ema50 = hist["Close"].ewm(span=50).mean().iloc[-1]
+            ema20 = close_prices.ewm(span=20).mean().iloc[-1]
+            ema50 = close_prices.ewm(span=50).mean().iloc[-1]
 
             month_return = (
-                (price / hist["Close"].iloc[0]) - 1
+                (price / close_prices.iloc[0]) - 1
             ) * 100
 
             month_high = hist["High"].max()
@@ -85,8 +85,8 @@ price = close_prices.iloc[-1]
                 score += 20
 
             print(
-    f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
-)
+                f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
+            )
 
             if score >= 60:
 
