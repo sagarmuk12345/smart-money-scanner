@@ -79,7 +79,9 @@ try:
             if price >= month_high * 0.98:
                 score += 20
 
-            print(f"{symbol} | Score={score} | RVOL={rvol:.2f}")
+            print(
+    f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
+)
 
             if score >= 70:
 
