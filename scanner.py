@@ -78,7 +78,7 @@ elif month_return > 5:
 if price >= month_high * 0.98:
     score += 20
 
-            if rvol > 1.5:
+           if score >= 70:
 
                 alerts.append(
                     f"🚀 {symbol}\nRVOL = {rvol:.2f}"
