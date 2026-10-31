@@ -5,57 +5,65 @@ warnings.filterwarnings("ignore")
 
 import yfinance as yf
 
-WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
+try:
 
-watchlist = [
-    "META",
-    "GOOGL",
-    "AMZN",
-    "NVDA",
-    "MSFT",
-    "AAPL",
-    "AMD",
-    "TSLA",
-    "PLTR"
-]
+    WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
 
-alerts = []
+    watchlist = [
+        "META",
+        "GOOGL",
+        "AMZN",
+        "NVDA",
+        "MSFT",
+        "AAPL",
+        "AMD",
+        "TSLA",
+        "PLTR"
+    ]
 
-for symbol in watchlist:
+    alerts = []
 
-    try:
+    for symbol in watchlist:
 
-        stock = yf.Ticker(symbol)
+        try:
 
-        hist = stock.history(period="1mo")
+            stock = yf.Ticker(symbol)
 
-        avg_volume = hist["Volume"].tail(20).mean()
-        latest_volume = hist["Volume"].iloc[-1]
+            hist = stock.history(period="1mo")
 
-        rvol = latest_volume / avg_volume
+            if hist.empty:
+                continue
 
-        if rvol > 2:
+            avg_volume = hist["Volume"].tail(20).mean()
+            latest_volume = hist["Volume"].iloc[-1]
 
-          price = hist["Close"].iloc[-1]
+            rvol = latest_volume / avg_volume
 
-alerts.append(
-    f"🚀 {symbol}\nPrice = ${price:.2f}\nRVOL = {rvol:.2f}"
-)
-    except Exception as e:
+            print(f"{symbol} RVOL = {rvol:.2f}")
 
-        print(symbol, e)
+            if rvol > 1.5:
 
-if alerts:
+                alerts.append(
+                    f"🚀 {symbol}\nRVOL = {rvol:.2f}"
+                )
 
-    requests.post(
-        WEBHOOK,
-        json={
-            "content": "\n\n".join(alerts)
-        }
-    )
+        except Exception as e:
 
-    print("ALERT SENT")
+            print(f"{symbol} ERROR: {e}")
 
-else:
+    if alerts:
 
-    print("NO SIGNALS")
+        requests.post(
+            WEBHOOK,
+            json={"content": "\n\n".join(alerts)}
+        )
+
+        print("ALERT SENT")
+
+    else:
+
+        print("NO SIGNALS")
+
+except Exception as e:
+
+    print("FATAL ERROR:", e)
