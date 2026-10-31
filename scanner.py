@@ -88,7 +88,7 @@ price = close_prices.iloc[-1]
     f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
 )
 
-            if score >= 10:
+            if score >= 60:
 
                 alerts.append(
                     f"""🚀 {symbol}
