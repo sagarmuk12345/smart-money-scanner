@@ -83,7 +83,7 @@ try:
     f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
 )
 
-            if score >= 70:
+            if score >= 10:
 
                 alerts.append(
                     f"""🚀 {symbol}
