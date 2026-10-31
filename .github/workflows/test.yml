@@ -3,6 +3,9 @@ name: Hourly Scanner
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: '0 * * * 1-5'
+
 jobs:
   scanner:
     runs-on: ubuntu-latest
