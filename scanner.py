@@ -39,7 +39,44 @@ try:
 
             rvol = latest_volume / avg_volume
 
-            print(f"{symbol} RVOL = {rvol:.2f}")
+            price = hist["Close"].iloc[-1]
+
+ema20 = hist["Close"].ewm(span=20).mean().iloc[-1]
+ema50 = hist["Close"].ewm(span=50).mean().iloc[-1]
+
+month_return = (
+    (price / hist["Close"].iloc[0]) - 1
+) * 100
+
+month_high = hist["High"].max()
+
+score = 0
+
+# RVOL
+if rvol > 3:
+    score += 20
+elif rvol > 2:
+    score += 15
+elif rvol > 1.5:
+    score += 10
+
+# Above 20 EMA
+if price > ema20:
+    score += 20
+
+# Above 50 EMA
+if price > ema50:
+    score += 20
+
+# Momentum
+if month_return > 10:
+    score += 20
+elif month_return > 5:
+    score += 10
+
+# Near monthly high
+if price >= month_high * 0.98:
+    score += 20
 
             if rvol > 1.5:
 
