@@ -40,7 +40,12 @@ try:
 
             rvol = latest_volume / avg_volume
 
-            price = hist["Close"].iloc[-1]
+            close_prices = hist["Close"].dropna()
+
+if len(close_prices) < 20:
+    continue
+
+price = close_prices.iloc[-1]
 
             ema20 = hist["Close"].ewm(span=20).mean().iloc[-1]
             ema50 = hist["Close"].ewm(span=50).mean().iloc[-1]
