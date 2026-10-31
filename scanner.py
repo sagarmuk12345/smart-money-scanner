@@ -78,11 +78,23 @@ elif month_return > 5:
 if price >= month_high * 0.98:
     score += 20
 
-           if score >= 70:
+     if score >= 70:
 
-                alerts.append(
-                    f"🚀 {symbol}\nRVOL = {rvol:.2f}"
-                )
+    alerts.append(
+        f"""
+🚀 {symbol}
+
+Score: {score}/100
+
+Price: ${price:.2f}
+RVOL: {rvol:.2f}
+
+20 EMA: ${ema20:.2f}
+50 EMA: ${ema50:.2f}
+
+1M Return: {month_return:.1f}%
+"""
+    )
 
         except Exception as e:
 
