@@ -1,124 +1,144 @@
 import os
+import tempfile
 import requests
-import warnings
-
-warnings.filterwarnings("ignore")
-
 import yfinance as yf
+import pandas as pd
+import numpy as np
+import mplfinance as mpf
 
-try:
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-    WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
+WATCHLIST = [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "NVDA",
+    "TSLA",
+    "AMD",
+    "PLTR",
+    "NFLX"
+]
 
-    watchlist = [
-        "META",
-        "GOOGL",
-        "AMZN",
-        "NVDA",
-        "MSFT",
-        "AAPL",
-        "AMD",
-        "TSLA",
-        "PLTR"
+
+def calculate_rsi(close, period=14):
+    delta = close.diff()
+
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+
+    avg_gain = gain.rolling(period).mean()
+    avg_loss = loss.rolling(period).mean()
+
+    rs = avg_gain / avg_loss
+
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
+
+
+def generate_chart(df, ticker):
+
+    chart_file = f"{ticker}.png"
+
+    apds = [
+        mpf.make_addplot(df["MA50"], color="blue"),
+        mpf.make_addplot(df["MA200"], color="red")
     ]
 
-    alerts = []
+    mpf.plot(
+        df,
+        type="candle",
+        style="yahoo",
+        addplot=apds,
+        volume=True,
+        figsize=(12, 8),
+        title=f"{ticker} RSI Pullback Setup",
+        savefig=chart_file
+    )
 
-    for symbol in watchlist:
+    return chart_file
 
-        try:
 
-            stock = yf.Ticker(symbol)
+def send_discord(message, image_path):
 
-            hist = stock.history(period="1mo")
-
-            if hist.empty:
-                continue
-
-            avg_volume = hist["Volume"].tail(20).mean()
-            latest_volume = hist["Volume"].iloc[-1]
-
-            rvol = latest_volume / avg_volume
-
-            close_prices = hist["Close"].dropna()
-
-            if len(close_prices) < 20:
-                continue
-
-            price = close_prices.iloc[-1]
-
-            ema20 = close_prices.ewm(span=20).mean().iloc[-1]
-            ema50 = close_prices.ewm(span=50).mean().iloc[-1]
-
-            month_return = (
-                (price / close_prices.iloc[0]) - 1
-            ) * 100
-
-            month_high = hist["High"].max()
-
-            score = 0
-
-            # RVOL
-            if rvol > 3:
-                score += 20
-            elif rvol > 2:
-                score += 15
-            elif rvol > 1.5:
-                score += 10
-
-            # Above 20 EMA
-            if price > ema20:
-                score += 20
-
-            # Above 50 EMA
-            if price > ema50:
-                score += 20
-
-            # Momentum
-            if month_return > 10:
-                score += 20
-            elif month_return > 5:
-                score += 10
-
-            # Near monthly high
-            if price >= month_high * 0.98:
-                score += 20
-
-            print(
-                f"{symbol} | Score={score} | Price={price:.2f} | RVOL={rvol:.2f}"
-            )
-
-            if score >= 60:
-
-                alerts.append(
-                    f"""🚀 {symbol}
-
-Score: {score}/100
-Price: ${price:.2f}
-RVOL: {rvol:.2f}
-
-20 EMA: ${ema20:.2f}
-50 EMA: ${ema50:.2f}
-
-1M Return: {month_return:.1f}%"""
-                )
-
-        except Exception as e:
-            print(f"{symbol} ERROR: {e}")
-
-    if alerts:
+    with open(image_path, "rb") as f:
 
         requests.post(
-            WEBHOOK,
-            json={"content": "\n\n".join(alerts)}
+            WEBHOOK_URL,
+            data={"content": message},
+            files={"file": f}
         )
 
-        print("ALERT SENT")
 
-    else:
+def scan_stock(ticker):
 
-        print("NO SIGNALS")
+    try:
 
-except Exception as e:
+        df = yf.download(
+            ticker,
+            period="2y",
+            interval="1d",
+            progress=False
+        )
 
-    print("FATAL ERROR:", e)
+        if len(df) < 220:
+            return
+
+        df["MA50"] = df["Close"].rolling(50).mean()
+        df["MA200"] = df["Close"].rolling(200).mean()
+        df["RSI"] = calculate_rsi(df["Close"])
+
+        close = float(df["Close"].iloc[-1])
+        ma50 = float(df["MA50"].iloc[-1])
+        ma200 = float(df["MA200"].iloc[-1])
+
+        rsi_today = float(df["RSI"].iloc[-1])
+        rsi_yesterday = float(df["RSI"].iloc[-2])
+
+        trend_ok = (
+            close > ma200 and
+            ma50 > ma200
+        )
+
+        rsi_signal = (
+            30 <= rsi_today <= 35 and
+            rsi_today > rsi_yesterday
+        )
+
+        if trend_ok and rsi_signal:
+
+            chart = generate_chart(df, ticker)
+
+            msg = (
+                f"🚀 {ticker}\n\n"
+                f"Price: ${close:.2f}\n"
+                f"RSI: {rsi_today:.2f} ↑\n"
+                f"50MA: {ma50:.2f}\n"
+                f"200MA: {ma200:.2f}\n\n"
+                f"✅ Price > 200MA\n"
+                f"✅ 50MA > 200MA\n"
+                f"✅ RSI Turning Up"
+            )
+
+            send_discord(msg, chart)
+
+            os.remove(chart)
+
+    except Exception as e:
+        print(f"{ticker}: {e}")
+
+
+def main():
+
+    print("Running scanner...")
+
+    for ticker in WATCHLIST:
+        scan_stock(ticker)
+
+    print("Finished")
+
+
+if __name__ == "__main__":
+    main()
