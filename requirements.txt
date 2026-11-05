@@ -2,5 +2,7 @@ yfinance
 pandas
 numpy
 requests
-mplfinance
 matplotlib
+mplfinance
+six
+openpyxl
