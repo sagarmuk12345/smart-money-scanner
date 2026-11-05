@@ -34,19 +34,17 @@ def calculate_rsi(close, period=14):
 
 
 def send_discord(message):
-
     response = requests.post(
         WEBHOOK_URL,
         json={"content": message}
     )
 
-    print("Discord Status:", response.status_code)
+    print(f"Discord Status: {response.status_code}")
 
 
 def scan_stock(ticker):
 
     try:
-
         df = yf.download(
             ticker,
             period="2y",
@@ -64,4 +62,33 @@ def scan_stock(ticker):
         df["RSI"] = calculate_rsi(df["Close"])
 
         close = float(df["Close"].iloc[-1])
-        ma50
+        ma50 = float(df["MA50"].iloc[-1])
+        ma200 = float(df["MA200"].iloc[-1])
+
+        rsi_today = float(df["RSI"].iloc[-1])
+        rsi_yesterday = float(df["RSI"].iloc[-2])
+
+        trend_ok = (
+            close > ma200 and
+            ma50 > ma200
+        )
+
+        rsi_signal = (
+            40 <= rsi_today <= 45 and
+            rsi_today > rsi_yesterday
+        )
+
+        print(
+            f"{ticker} | "
+            f"Close={close:.2f} | "
+            f"MA50={ma50:.2f} | "
+            f"MA200={ma200:.2f} | "
+            f"RSI={rsi_today:.2f} | "
+            f"Trend={trend_ok} | "
+            f"RSI_Signal={rsi_signal}"
+        )
+
+        if trend_ok and rsi_signal:
+
+            message = (
+  
